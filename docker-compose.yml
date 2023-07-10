@@ -1,0 +1,42 @@
+version: "3"
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    links:
+      - mongodb
+    depends_on:
+      - mongodb
+  mongodb:
+    image: mongo:6.0
+    volumes:
+      - ~/mongo:/data/db
+    ports:
+      - "27017:27017"
+  redash:
+    image: redash/redash:10.1.0.b50633
+    command: server
+    links:
+      - mongodb
+    depends_on:
+      - mongodb
+  scheduler:
+    image: redash/redash:10.1.0.b50633
+    command: scheduler
+    links:
+      - mongodb
+    depends_on:
+      - mongodb
+    environment:
+      QUEUES: celery
+      WORKERS_COUNT: 1
+  worker:
+    image: redash/redash:10.1.0.b50633
+    command: worker
+    links:
+      - mongodb
+    depends_on:
+      - mongodb
+    environment:
+      QUEUES: queries,scheduled_queries,schemas
